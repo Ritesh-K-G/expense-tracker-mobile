@@ -1,5 +1,4 @@
 import 'package:expense_tracker/spalsh_screen.dart';
-import 'package:expense_tracker/views/ExpenseHomePage.dart';
 import 'package:flutter/material.dart';
 
 void main() {
