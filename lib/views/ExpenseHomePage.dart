@@ -17,6 +17,19 @@ class ExpenseHomePage extends StatefulWidget {
 class _ExpenseHomePageState extends State<ExpenseHomePage> {
   List<Map<String, dynamic>> _allExpenses = [];
   List<Map<String, dynamic>> _filteredExpenses = [];
+  final TextEditingController _amountController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
+  DateTime _selectedDate = DateTime.now();
+  final List<String> _categories = [
+    'Food',
+    'Snacks',
+    'Travel',
+    'Daily Goods',
+    'Entertainment',
+    'Bills',
+    'Miscellaneous'
+  ];
+  String _selectedAddCategory = 'Food';
   late SharedPreferences pref;
 
   String _selectedCategory = 'All';
@@ -133,6 +146,32 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
     });
   }
 
+  void saveData() async {
+    String encodedData = json.encode(_allExpenses);
+    await pref.setString('expense_data_test', encodedData);
+    setState(() {});
+  }
+
+  void _addExpense() {
+    final double? amount = double.tryParse(_amountController.text);
+    final String description = _descriptionController.text;
+
+    if (amount != null) {
+      setState(() {
+        _allExpenses.insert(0, {
+          'amount': amount,
+          'category': _selectedAddCategory,
+          'description': description,
+          'date': _selectedDate.millisecondsSinceEpoch,
+        });
+        _filteredExpenses = _allExpenses;
+      });
+      _amountController.clear();
+      _descriptionController.clear();
+      saveData();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -152,6 +191,144 @@ class _ExpenseHomePageState extends State<ExpenseHomePage> {
               onPressed: () async {
                 _loadData();
               },
+            ),
+            IconButton(
+              icon: const Icon(Icons.add, color: Colors.white),
+              onPressed: () => showDialog(
+                context: context,
+                builder: (ctx) => AlertDialog(
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  title: const Text(
+                    'Add Expense',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 20,
+                    ),
+                  ),
+                  content: SingleChildScrollView(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(ctx).size.height * 0.6,
+                      ),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          TextField(
+                            controller: _amountController,
+                            keyboardType: TextInputType.number,
+                            decoration: InputDecoration(
+                              labelText: 'Amount',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          TextField(
+                            controller: _descriptionController,
+                            decoration: InputDecoration(
+                              labelText: 'Description',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                          ),
+                          const SizedBox(height: 10),
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  "Date: ${_selectedDate.toLocal().toString().split(' ')[0]}",
+                                  style: TextStyle(color: Colors.grey[700]),
+                                ),
+                              ),
+                              TextButton.icon(
+                                onPressed: () async {
+                                  DateTime? pickedDate = await showDatePicker(
+                                    context: context,
+                                    initialDate: _selectedDate,
+                                    firstDate: DateTime(2000),
+                                    lastDate: DateTime(2101),
+                                  );
+                                  if (pickedDate != null) {
+                                    setState(() {
+                                      _selectedDate = pickedDate;
+                                    });
+                                  }
+                                },
+                                icon:
+                                const Icon(Icons.calendar_today, size: 16),
+                                label: const Text('Select Date'),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
+                          DropdownButtonFormField<String>(
+                            value: _selectedAddCategory,
+                            decoration: InputDecoration(
+                              labelText: 'Category',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              filled: true,
+                              fillColor: Colors.grey[200],
+                              contentPadding: const EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 12),
+                            ),
+                            items: _categories.map((String category) {
+                              return DropdownMenuItem<String>(
+                                value: category,
+                                child: Text(category),
+                              );
+                            }).toList(),
+                            onChanged: (String? newValue) {
+                              setState(() {
+                                _selectedAddCategory = newValue!;
+                              });
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(ctx).pop();
+                      },
+                      style: TextButton.styleFrom(
+                        foregroundColor: Colors.grey[700],
+                      ),
+                      child: const Text('Cancel'),
+                    ),
+                    ElevatedButton(
+                      onPressed: () {
+                        _addExpense();
+                        Navigator.of(ctx).pop();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.black,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      child: const Text('Add Expense',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
             ),
             IconButton(
               icon: const Icon(Icons.list, color: Colors.white),

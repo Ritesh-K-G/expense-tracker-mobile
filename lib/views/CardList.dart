@@ -51,7 +51,10 @@ class _CardListPageState extends State<CardListPage> {
   void saveData() async {
     String encodedData = json.encode(_expenses);
     await pref.setString('expense_data_test', encodedData);
-    setState(() {});
+    setState(() {
+      _filteredExpenses = _expenses;
+      _clearFilters();
+    });
   }
 
   List<Map<String, dynamic>> loadData() {
@@ -553,9 +556,7 @@ class _CardListPageState extends State<CardListPage> {
                         context,
                         () {
                           setState(() {
-                            _expenses.removeWhere(
-                                (element) => mapEquals(element, expense));
-                            _filteredExpenses.removeAt(index);
+                            _expenses.removeAt(_expenses.indexOf(expense));
                             saveData();
                           });
                         },
